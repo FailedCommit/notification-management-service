@@ -38,8 +38,9 @@ public class NotificationService {
 
     private NotificationGatewayRequest prepareNotificationGatewayRequest(NotificationRequest request) {
         NotificationPreferencesResponse preferences = getNotificationPreferences(request.getCustomerId());
-        NotificationTemplateResponse notificationTemplate = getNotificationTemplate(request);
         String notificationMode = preferences.isEmailPreferenceFlag() ? "EMAIL" : "SMS";
+        request.setNotificationMode(notificationMode);
+        NotificationTemplateResponse notificationTemplate = getNotificationTemplate(request);
         NotificationGatewayRequest gatewayRequest = new NotificationGatewayRequest();
         gatewayRequest.setCustomerId(request.getCustomerId());
         gatewayRequest.setNotificationMode(notificationMode);
