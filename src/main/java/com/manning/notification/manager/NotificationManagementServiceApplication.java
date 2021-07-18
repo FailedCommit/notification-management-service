@@ -1,13 +1,21 @@
 package com.manning.notification.manager;
 
+import com.manning.notification.manager.util.H2ServerStarter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 public class NotificationManagementServiceApplication {
 
     public static void main(String[] args) {
+        H2ServerStarter.startH2Server();
         SpringApplication.run(NotificationManagementServiceApplication.class, args);
     }
 
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 }
