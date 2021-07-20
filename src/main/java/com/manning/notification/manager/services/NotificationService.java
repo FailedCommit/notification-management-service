@@ -36,6 +36,18 @@ public class NotificationService {
         return prepareNotificationResponse(response);
     }
 
+    private NotificationTemplateResponse getNotificationTemplate(NotificationRequest request) {
+        ResponseEntity<NotificationTemplateResponse> response
+                = restTemplate.postForEntity(notificationFormatterUrl, request, NotificationTemplateResponse.class);
+        return response.getBody();
+    }
+
+    private NotificationPreferencesResponse getNotificationPreferences(String customerId) {
+        NotificationPreferencesResponse response
+                = restTemplate.getForObject(notificationPreferencesUrl + "/" + customerId, NotificationPreferencesResponse.class);
+        return response;
+    }
+
     private NotificationGatewayRequest prepareNotificationGatewayRequest(NotificationRequest request) {
         NotificationPreferencesResponse preferences = getNotificationPreferences(request.getCustomerId());
         String notificationMode = preferences.isEmailPreferenceFlag() ? "EMAIL" : "SMS";
@@ -53,18 +65,6 @@ public class NotificationService {
             gatewayRequest.setNotificationContent(notificationTemplate.getSmsContent());
         }
         return gatewayRequest;
-    }
-
-    private NotificationTemplateResponse getNotificationTemplate(NotificationRequest request) {
-        ResponseEntity<NotificationTemplateResponse> response
-                = restTemplate.postForEntity(notificationFormatterUrl, request, NotificationTemplateResponse.class);
-        return response.getBody();
-    }
-
-    private NotificationPreferencesResponse getNotificationPreferences(String customerId) {
-        NotificationPreferencesResponse response
-                = restTemplate.getForObject(notificationPreferencesUrl + "/" + customerId, NotificationPreferencesResponse.class);
-        return response;
     }
 
     private NotificationResponse prepareNotificationResponse(ResponseEntity<NotificationGatewayResponse> response) {
