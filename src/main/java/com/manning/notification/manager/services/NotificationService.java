@@ -12,47 +12,30 @@ import java.util.UUID;
 @Service
 @Data
 public class NotificationService {
-    private final RestTemplate restTemplate;
+    private final NotificationPreferencesIntegration notificationPreferencesIntegration;
+    private final NotificationGatewayIntegration notificationGatewayIntegration;
+    private final NotificationTemplateFormatterIntegration notificationTemplateFormatterIntegration;
 
-    @Value("${url.gateway.service}")
-    private String notificationGatewayUrl;
-    @Value("${url.preference.service}")
-    private String notificationPreferencesUrl;
-    @Value("${uri.formatter.service}")
-    private String notificationFormatterUrl;
-
-    public NotificationService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public NotificationService(
+            NotificationPreferencesIntegration notificationPreferencesIntegration,
+            NotificationGatewayIntegration notificationGatewayIntegration,
+            NotificationTemplateFormatterIntegration notificationTemplateFormatterIntegration) {
+        this.notificationPreferencesIntegration = notificationPreferencesIntegration;
+        this.notificationGatewayIntegration = notificationGatewayIntegration;
+        this.notificationTemplateFormatterIntegration = notificationTemplateFormatterIntegration;
     }
 
     public NotificationResponse sendNotification(NotificationRequest request) {
         final NotificationGatewayRequest gatewayRequest = prepareNotificationGatewayRequest(request);
-        return send(gatewayRequest);
-    }
-
-    private NotificationResponse send(NotificationGatewayRequest request) {
-        ResponseEntity<NotificationGatewayResponse> response
-                = restTemplate.postForEntity(notificationGatewayUrl, request, NotificationGatewayResponse.class);
-        return prepareNotificationResponse(response);
-    }
-
-    private NotificationTemplateResponse getNotificationTemplate(NotificationRequest request) {
-        ResponseEntity<NotificationTemplateResponse> response
-                = restTemplate.postForEntity(notificationFormatterUrl, request, NotificationTemplateResponse.class);
-        return response.getBody();
-    }
-
-    private NotificationPreferencesResponse getNotificationPreferences(String customerId) {
-        NotificationPreferencesResponse response
-                = restTemplate.getForObject(notificationPreferencesUrl + "/" + customerId, NotificationPreferencesResponse.class);
-        return response;
+        final NotificationGatewayResponse notificationGatewayResponse = notificationGatewayIntegration.sendNotification(gatewayRequest);
+        return prepareNotificationResponse(notificationGatewayResponse);
     }
 
     private NotificationGatewayRequest prepareNotificationGatewayRequest(NotificationRequest request) {
-        NotificationPreferencesResponse preferences = getNotificationPreferences(request.getCustomerId());
+        NotificationPreferencesResponse preferences = notificationPreferencesIntegration.getNotificationPreferencesResponse(request);
         String notificationMode = preferences.isEmailPreferenceFlag() ? "EMAIL" : "SMS";
         request.setNotificationMode(notificationMode);
-        NotificationTemplateResponse notificationTemplate = getNotificationTemplate(request);
+        NotificationTemplateResponse notificationTemplate = notificationTemplateFormatterIntegration.getNotificationTemplate(request);
         NotificationGatewayRequest gatewayRequest = new NotificationGatewayRequest();
         gatewayRequest.setCustomerId(request.getCustomerId());
         gatewayRequest.setNotificationMode(notificationMode);
@@ -67,10 +50,10 @@ public class NotificationService {
         return gatewayRequest;
     }
 
-    private NotificationResponse prepareNotificationResponse(ResponseEntity<NotificationGatewayResponse> response) {
+    private NotificationResponse prepareNotificationResponse(NotificationGatewayResponse response) {
         NotificationResponse notificationResponse = new NotificationResponse();
-        notificationResponse.setStatus(response.getBody().getStatus());
-        notificationResponse.setStatusDescription(response.getBody().getStatusDescription());
+        notificationResponse.setStatus(response.getStatus());
+        notificationResponse.setStatusDescription(response.getStatusDescription());
         notificationResponse.setNotificationReferenceId(UUID.randomUUID().toString());
         return notificationResponse;
     }
