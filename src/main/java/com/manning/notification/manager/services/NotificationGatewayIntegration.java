@@ -6,6 +6,7 @@ import com.manning.notification.manager.model.NotificationPreferencesResponse;
 import com.manning.notification.manager.model.NotificationRequest;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
@@ -24,6 +25,7 @@ public class NotificationGatewayIntegration {
 
     @Bulkhead(name= "bulkheadService",fallbackMethod= "bulkheadFallback")
     @CircuitBreaker(name = "circuitBreakerService", fallbackMethod = "circuitBreakerFallback")
+    @Retry(name= "retryService",fallbackMethod= "retryFallback")
     public NotificationGatewayResponse sendNotification(NotificationGatewayRequest notificationGatewayRequest)  {
         ResponseEntity<NotificationGatewayResponse> response
                 = restTemplate.postForEntity(notificationGatewayUrl, notificationGatewayRequest, NotificationGatewayResponse.class);
@@ -41,6 +43,13 @@ public class NotificationGatewayIntegration {
         NotificationGatewayResponse response = new NotificationGatewayResponse();
         response.setStatus("WARNING");
         response.setStatusDescription("Circuit Breaker Opened for Notification Gateway Service");
+        return response;
+    }
+
+    public NotificationGatewayResponse retryFallback(NotificationGatewayRequest request, Throwable throwable) {
+        NotificationGatewayResponse response = new NotificationGatewayResponse();
+        response.setStatus("WARNING");
+        response.setStatusDescription("Retry Failed for Notification Gateway Service");
         return response;
     }
 }
