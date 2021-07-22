@@ -1,11 +1,9 @@
 package com.manning.notification.manager.services;
 
-import com.manning.notification.manager.model.NotificationGatewayRequest;
-import com.manning.notification.manager.model.NotificationGatewayResponse;
-import com.manning.notification.manager.model.NotificationRequest;
-import com.manning.notification.manager.model.NotificationTemplateResponse;
+import com.manning.notification.manager.model.*;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +22,7 @@ public class NotificationTemplateFormatterIntegration {
     @Bulkhead(name= "bulkheadService",fallbackMethod= "bulkheadFallback")
     @CircuitBreaker(name = "circuitBreakerService", fallbackMethod = "circuitBreakerFallback")
     @Retry(name= "retryService",fallbackMethod= "retryFallback")
+    @RateLimiter(name = "rateLimiterService",fallbackMethod = "rateLimiterFallback")
     public NotificationTemplateResponse getNotificationTemplate(NotificationRequest request)  {
         ResponseEntity<NotificationTemplateResponse> response = restTemplate.postForEntity(
                 notificationFormatterUrl, request, NotificationTemplateResponse.class);
@@ -48,6 +47,13 @@ public class NotificationTemplateFormatterIntegration {
         NotificationTemplateResponse response = new NotificationTemplateResponse();
         response.setStatus("WARNING");
         response.setStatusDescription("Retry Failed for Notification Gateway Service");
+        return response;
+    }
+
+    public NotificationTemplateResponse rateLimiterFallback(NotificationRequest request, Throwable throwable) {
+        NotificationTemplateResponse response = new NotificationTemplateResponse();
+        response.setStatus("WARNING");
+        response.setStatusDescription("Rate Limiter Failed for Notification Template Formatter Service");
         return response;
     }
 }

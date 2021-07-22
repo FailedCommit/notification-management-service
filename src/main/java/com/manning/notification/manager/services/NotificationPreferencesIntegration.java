@@ -6,6 +6,7 @@ import com.manning.notification.manager.model.NotificationPreferencesResponse;
 import com.manning.notification.manager.model.NotificationRequest;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ public class NotificationPreferencesIntegration {
     @Bulkhead(name= "bulkheadService",fallbackMethod= "bulkheadFallback")
     @CircuitBreaker(name = "circuitBreakerService", fallbackMethod = "circuitBreakerFallback")
     @Retry(name= "retryService",fallbackMethod= "retryFallback")
+    @RateLimiter(name = "rateLimiterService",fallbackMethod = "rateLimiterFallback")
     public NotificationPreferencesResponse getNotificationPreferencesResponse(NotificationRequest request)  {
         final NotificationPreferencesResponse response = restTemplate.getForObject(
                 notificationPreferencesUrl + "/" + request.getCustomerId(), NotificationPreferencesResponse.class);
@@ -47,6 +49,13 @@ public class NotificationPreferencesIntegration {
         NotificationPreferencesResponse response = new NotificationPreferencesResponse();
         response.setStatus("WARNING");
         response.setStatusDescription("Retry Failed for Notification Preferences Service");
+        return response;
+    }
+
+    public NotificationPreferencesResponse rateLimiterFallback(NotificationRequest request,Throwable throwable) {
+        NotificationPreferencesResponse response = new NotificationPreferencesResponse();
+        response.setStatus("WARNING");
+        response.setStatusDescription("Rate Limiter Failed for Notification Preferences Service");
         return response;
     }
 }
