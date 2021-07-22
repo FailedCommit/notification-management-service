@@ -2,8 +2,6 @@ package com.manning.notification.manager.services;
 
 import com.manning.notification.manager.model.NotificationGatewayRequest;
 import com.manning.notification.manager.model.NotificationGatewayResponse;
-import com.manning.notification.manager.model.NotificationPreferencesResponse;
-import com.manning.notification.manager.model.NotificationRequest;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
